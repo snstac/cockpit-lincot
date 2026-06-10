@@ -1,42 +1,40 @@
+# Cockpit LINCOT — build and install.
+#
+# Quick start:
+#   make                  # build the plugin into dist/ (fetches pkg/lib, npm ci)
+#   sudo make install     # install plugin system-wide (/usr/share/cockpit/lincot)
+#   make devel-install    # symlink dist/ into ~/.local/share/cockpit for development
+#   make watch            # rebuild on change
+#   make deb rpm          # build Debian and RPM packages with nfpm
+
 # extract name from package.json
 PACKAGE_NAME := $(shell awk '/"name":/ {gsub(/[",]/, "", $$2); print $$2}' package.json)
-RPM_NAME := cockpit-$(PACKAGE_NAME)
+PKG_NAME := cockpit-$(PACKAGE_NAME)
 # Do not use "git describe | sed" alone: if describe fails, sed still exits 0 and T stays empty.
 VERSION_RAW := $(shell \
 	T=$$(git describe --tags 2>/dev/null | sed 's/^v//'); \
-	if [ -z "$$T" ]; then T=1; fi; \
+	if [ -z "$$T" ]; then T=0.0.0; fi; \
 	echo "$$T" | tr '-' '.')
-VERSION := $(if $(strip $(VERSION_RAW)),$(VERSION_RAW),1)
-ifeq ($(TEST_OS),)
-TEST_OS = centos-9-stream
-endif
-export TEST_OS
-TARFILE=$(RPM_NAME)-$(VERSION).tar.xz
-NODE_CACHE=$(RPM_NAME)-node-$(VERSION).tar.xz
-SPEC=$(RPM_NAME).spec
-PREFIX ?= /usr/local
-APPSTREAMFILE=org.cockpit_project.$(subst -,_,$(PACKAGE_NAME)).metainfo.xml
-VM_IMAGE=$(CURDIR)/test/images/$(TEST_OS)
+VERSION := $(if $(strip $(VERSION_RAW)),$(VERSION_RAW),0.0.0)
+PREFIX ?= /usr
+DESTDIR ?=
+APPSTREAMFILE = org.cockpit_project.$(subst -,_,$(PACKAGE_NAME)).metainfo.xml
+
 # committed lockfile + stamp refreshed by npm ci when package.json / lock changes
-PACKAGE_LOCK=package-lock.json
-NODE_MODULES_STAMP=node_modules/.npm-stamp
+PACKAGE_LOCK = package-lock.json
+NODE_MODULES_STAMP = node_modules/.npm-stamp
 # one example file in dist/ from bundler that already ran
-DIST_TEST=dist/manifest.json
+DIST_TEST = dist/manifest.json
 # one example file in pkg/lib to check if it was already checked out
-COCKPIT_REPO_STAMP=pkg/lib/cockpit-po-plugin.js
-# common arguments for tar, mostly to make the generated tarballs reproducible
-TAR_ARGS = --sort=name --mtime "@$(shell git show --no-patch --format='%at')" --mode=go=rX,u+rw,a-s --numeric-owner --owner=0 --group=0
+COCKPIT_REPO_STAMP = pkg/lib/cockpit-po-plugin.js
 
 all: $(DIST_TEST)
 
-# checkout common files from Cockpit repository required to build this project;
-# this has no API stability guarantee, so check out a stable tag when you start
-# a new project, use the latest release, and update it from time to time
-COCKPIT_REPO_FILES = \
-	pkg/lib \
-	test/common \
-	$(NULL)
-
+#
+# Cockpit build helpers (pkg/lib) are vendored from the Cockpit repo at a pinned
+# commit. No API stability guarantee; bump occasionally.
+#
+COCKPIT_REPO_FILES = pkg/lib
 COCKPIT_REPO_URL = https://github.com/cockpit-project/cockpit.git
 COCKPIT_REPO_COMMIT = 7776f5476411577da93a0fc8ba9ba467d846358f
 
@@ -50,8 +48,7 @@ $(COCKPIT_REPO_STAMP): Makefile
 #
 # i18n
 #
-
-LINGUAS=$(basename $(notdir $(wildcard po/*.po)))
+LINGUAS = $(basename $(notdir $(wildcard po/*.po)))
 
 po/$(PACKAGE_NAME).js.pot:
 	xgettext --default-domain=$(PACKAGE_NAME) --output=- --language=C --keyword= \
@@ -80,156 +77,71 @@ po/LINGUAS:
 	echo $(LINGUAS) | tr ' ' '\n' > $@
 
 #
-# Build/Install/dist
+# Build / install
 #
-
-$(SPEC): packaging/$(SPEC).in $(NODE_MODULES_STAMP)
-	provides=$$(npm ls --omit dev --package-lock-only --depth=Infinity | grep -Eo '[^[:space:]]+@[^[:space:]]+' | sort -u | sed 's/^/Provides: bundled(npm(/; s/\(.*\)@/\1)) = /'); \
-	awk -v p="$$provides" '{gsub(/%{VERSION}/, "$(VERSION)"); gsub(/%{NPM_PROVIDES}/, p)}1' $< > $@
-
 $(DIST_TEST): $(NODE_MODULES_STAMP) $(COCKPIT_REPO_STAMP) $(shell find src/ -type f) package.json build.js
 	NODE_ENV=$(NODE_ENV) node ./build.js
 
 watch: $(NODE_MODULES_STAMP) $(COCKPIT_REPO_STAMP)
 	NODE_ENV=$(NODE_ENV) node ./build.js --watch
 
-clean:
-	rm -rf dist/
-	rm -f $(SPEC)
-	rm -f po/LINGUAS
+COCKPITDIR = $(DESTDIR)$(PREFIX)/share/cockpit/$(PACKAGE_NAME)
 
 install: $(DIST_TEST) po/LINGUAS
-	mkdir -p $(DESTDIR)$(PREFIX)/share/cockpit/$(PACKAGE_NAME)
-	cp -r dist/* $(DESTDIR)$(PREFIX)/share/cockpit/$(PACKAGE_NAME)
+	mkdir -p $(COCKPITDIR)
+	cp -r dist/* $(COCKPITDIR)
 	mkdir -p $(DESTDIR)$(PREFIX)/share/metainfo/
-	msgfmt --xml -d po \
-		--template $(APPSTREAMFILE) \
-		-o $(DESTDIR)$(PREFIX)/share/metainfo/$(APPSTREAMFILE)
+	msgfmt --xml -d po --template $(APPSTREAMFILE) \
+		-o $(DESTDIR)$(PREFIX)/share/metainfo/$(APPSTREAMFILE) 2>/dev/null || \
+		cp $(APPSTREAMFILE) $(DESTDIR)$(PREFIX)/share/metainfo/$(APPSTREAMFILE)
 	mkdir -p $(DESTDIR)$(PREFIX)/share/polkit-1/rules.d
 	install -m 0644 packaging/49-cockpit-lincot.rules \
 		$(DESTDIR)$(PREFIX)/share/polkit-1/rules.d/49-cockpit-lincot.rules
+	@echo "Installed plugin -> $(COCKPITDIR)"
 
-# this requires a built source tree and avoids having to install anything system-wide
+uninstall:
+	rm -rf $(COCKPITDIR)
+	rm -f $(DESTDIR)$(PREFIX)/share/metainfo/$(APPSTREAMFILE)
+	rm -f $(DESTDIR)$(PREFIX)/share/polkit-1/rules.d/49-cockpit-lincot.rules
+
+# Development: symlink the built tree into the per-user cockpit dir (no root).
 devel-install: $(DIST_TEST)
 	mkdir -p ~/.local/share/cockpit
-	ln -s `pwd`/dist ~/.local/share/cockpit/$(PACKAGE_NAME)
+	ln -sfn `pwd`/dist ~/.local/share/cockpit/$(PACKAGE_NAME)
 
-# assumes that there was symlink set up using the above devel-install target,
-# and removes it
 devel-uninstall:
 	rm -f ~/.local/share/cockpit/$(PACKAGE_NAME)
 
 print-version:
 	@echo "$(VERSION)"
 
-dist: $(TARFILE)
-	@ls -1 $(TARFILE)
+#
+# Packaging — nfpm builds both .deb and .rpm from the prebuilt dist/ tree.
+#
+deb: $(DIST_TEST)
+	mkdir -p out
+	VERSION=$(VERSION) nfpm package -f nfpm.yaml -p deb -t out/
 
-# when building a distribution tarball, call bundler with a 'production' environment
-# we don't ship node_modules for license and compactness reasons; we ship a
-# pre-built dist/ (so it's not necessary) and ship package-lock.json (so that
-# node_modules/ can be reconstructed if necessary)
-$(TARFILE): export NODE_ENV=production
-$(TARFILE): $(DIST_TEST) $(SPEC)
-	if type appstream-util >/dev/null 2>&1; then appstream-util validate-relax --nonet *.metainfo.xml; fi
-	tar --xz $(TAR_ARGS) -cf $(TARFILE) --transform 's,^,$(RPM_NAME)/,' \
-		--exclude packaging/$(SPEC).in --exclude node_modules \
-		$$(git ls-files) $(COCKPIT_REPO_FILES) $(PACKAGE_LOCK) $(SPEC) dist/
+rpm: $(DIST_TEST)
+	mkdir -p out
+	VERSION=$(VERSION) nfpm package -f nfpm.yaml -p rpm -t out/
 
-$(NODE_CACHE): $(NODE_MODULES_STAMP)
-	tar --xz $(TAR_ARGS) -cf $@ node_modules
-
-node-cache: $(NODE_CACHE)
-
-# convenience target for developers
-srpm: $(TARFILE) $(NODE_CACHE) $(SPEC)
-	rpmbuild -bs \
-	  --define "_sourcedir `pwd`" \
-	  --define "_srcrpmdir `pwd`" \
-	  $(SPEC)
-
-# convenience target for developers
-rpm: $(TARFILE) $(NODE_CACHE) $(SPEC)
-	mkdir -p "`pwd`/output"
-	mkdir -p "`pwd`/rpmbuild"
-	rpmbuild -bb \
-	  --define "_sourcedir `pwd`" \
-	  --define "_specdir `pwd`" \
-	  --define "_builddir `pwd`/rpmbuild" \
-	  --define "_srcrpmdir `pwd`" \
-	  --define "_rpmdir `pwd`/output" \
-	  --define "_buildrootdir `pwd`/build" \
-	  $(SPEC)
-	find `pwd`/output -name '*.rpm' -printf '%f\n' -exec mv {} . \;
-	rm -r "`pwd`/rpmbuild"
-	rm -r "`pwd`/output" "`pwd`/build"
-
-# build a VM with locally built distro pkgs installed
-# disable networking, VM images have mock/pbuilder with the common build dependencies pre-installed
-$(VM_IMAGE): export XZ_OPT=-0
-$(VM_IMAGE): $(TARFILE) $(NODE_CACHE) bots test/vm.install
-	bots/image-customize --no-network --fresh \
-		--upload $(NODE_CACHE):/var/tmp/ --build $(TARFILE) \
-		--script $(CURDIR)/test/vm.install $(TEST_OS)
-
-# convenience target for the above
-vm: $(VM_IMAGE)
-	@echo $(VM_IMAGE)
-
-# convenience target to print the filename of the test image
-print-vm:
-	@echo $(VM_IMAGE)
-
-# convenience target to setup all the bits needed for the integration tests
-# without actually running them
-prepare-check: $(NODE_MODULES_STAMP) $(VM_IMAGE) test/common
-
-# run the browser integration tests
-# this will run all tests/check-* and format them as TAP
-check: prepare-check
-	test/common/run-tests ${RUN_TESTS_OPTIONS}
-
-codecheck: test/common $(NODE_MODULES_STAMP)
-	test/common/static-code
-
-# checkout Cockpit's bots for standard test VM images and API to launch them
-bots: $(COCKPIT_REPO_STAMP)
-	test/common/make-bots
+package: deb rpm
 
 $(NODE_MODULES_STAMP): package.json $(PACKAGE_LOCK)
 	# unset NODE_ENV, skips devDependencies otherwise
 	env -u NODE_ENV npm ci --ignore-scripts
 	@touch $(NODE_MODULES_STAMP)
 
-# Fast checks for CI: unit tests, linters, bundle, .deb
+# Fast checks for CI: unit tests, linters, bundle
 .PHONY: ci
 ci: $(NODE_MODULES_STAMP) $(COCKPIT_REPO_STAMP) $(DIST_TEST)
 	npm run test
 	npm run eslint
 	npm run stylelint
-	$(MAKE) deb
 
-deb:
-	rm -fr "`pwd`/output"
-	mkdir -m 0755 -p "`pwd`/output"
-	mkdir -m 0755 -p "`pwd`/output/cockpit-$(PACKAGE_NAME)"
-	mkdir -m 0755 -p "`pwd`/output/cockpit-$(PACKAGE_NAME)/DEBIAN"
-	mkdir -m 0755 -p "`pwd`/output/cockpit-$(PACKAGE_NAME)/usr/share/cockpit/$(PACKAGE_NAME)"
-	mkdir -m 0755 -p "`pwd`/output/cockpit-$(PACKAGE_NAME)/usr/share/polkit-1/rules.d"
-	cp -r dist/* "`pwd`/output/cockpit-$(PACKAGE_NAME)/usr/share/cockpit/$(PACKAGE_NAME)"
-	install -m 0644 packaging/49-cockpit-lincot.rules \
-		"`pwd`/output/cockpit-$(PACKAGE_NAME)/usr/share/polkit-1/rules.d/49-cockpit-lincot.rules"
-	cp packaging/cockpit-$(PACKAGE_NAME).control "`pwd`/output/cockpit-$(PACKAGE_NAME)/DEBIAN/control"
-	sed -i "s/1.0.0/$(VERSION)/g" "`pwd`/output/cockpit-$(PACKAGE_NAME)/DEBIAN/control"
-	chmod 755 "`pwd`/output/cockpit-$(PACKAGE_NAME)/DEBIAN/control"
-	dpkg-deb -Zxz --build output/cockpit-$(PACKAGE_NAME)
-	mv "`pwd`/output/cockpit-$(PACKAGE_NAME).deb" \
-		"`pwd`/$(RPM_NAME)_$(VERSION)_all.deb"
-	cp -f "`pwd`/$(RPM_NAME)_$(VERSION)_all.deb" "`pwd`/$(RPM_NAME)_latest_all.deb"
-	rm -r "`pwd`/output"
+clean:
+	rm -rf dist/ out/
+	rm -f po/LINGUAS
 
-
-install_pkg_build_deps:
-	sudo bash packaging/install_pkg_build_deps.sh
-
-.PHONY: all clean install devel-install devel-uninstall print-version dist node-cache rpm prepare-check check vm print-vm deb ci
+.PHONY: all watch install uninstall devel-install devel-uninstall print-version deb rpm package clean

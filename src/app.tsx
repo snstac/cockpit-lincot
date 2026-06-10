@@ -288,7 +288,7 @@ export const Application: React.FC = () => {
     }, []);
 
     return (
-        <div data-testid="adsbcot-app">
+        <div data-testid="lincot-app">
             {toast && (
                 <Alert
                     variant={toast.variant}
@@ -312,15 +312,15 @@ export const Application: React.FC = () => {
             <TlsUploadCard onToast={setToast} onInstalledPaths={onTlsInstalled} />
 
             <Card
-                className="adsbcot-expandable-card"
+                className="lincot-expandable-card"
                 isExpanded={isConfigExpanded}
-                data-testid="adsbcot-config-card"
+                data-testid="lincot-config-card"
             >
                 <CardHeader
                     className="ct-card-expandable-header"
                     onExpand={() => setIsConfigExpanded(!isConfigExpanded)}
                     toggleButtonProps={{
-                        id: 'adsbcot-config-expand',
+                        id: 'lincot-config-expand',
                         'aria-label': isConfigExpanded
                             ? _('Collapse configuration')
                             : _('Expand configuration'),
@@ -333,8 +333,8 @@ export const Application: React.FC = () => {
                 <CardExpandableContent>
                     {configLoadError && <Alert variant="warning" title={configLoadError} />}
                     <form onSubmit={handleEnvVarFormSubmit}>
-                        <div className="adsbcot-config-form-layout" data-testid="adsbcot-config-form-layout">
-                            <div className="adsbcot-config-body-scroll" data-testid="adsbcot-config-scroll">
+                        <div className="lincot-config-form-layout" data-testid="lincot-config-form-layout">
+                            <div className="lincot-config-body-scroll" data-testid="lincot-config-scroll">
                                 <DataList aria-label={_('Environment Variable Configuration')}>
                                     {Object.entries(CONF_PARAMS).map(([key, def]) => (
                                         <DataListItem key={key} aria-labelledby={`envvar-${key}`}>
@@ -428,9 +428,9 @@ export const Application: React.FC = () => {
                                     ))}
                                 </DataList>
                             </div>
-                            <div className="adsbcot-config-actions">
+                            <div className="lincot-config-actions">
                                 <Checkbox
-                                id="adsbcot-save-restart"
+                                id="lincot-save-restart"
                                 label={_('Restart lincot after save')}
                                 isChecked={saveAndRestart}
                                 onChange={(_ev, checked) => setSaveAndRestart(checked)}
@@ -449,12 +449,12 @@ export const Application: React.FC = () => {
                 </CardExpandableContent>
             </Card>
 
-            <Card className="adsbcot-expandable-card" isExpanded={isDebugExpanded}>
+            <Card className="lincot-expandable-card" isExpanded={isDebugExpanded}>
                 <CardHeader
                     className="ct-card-expandable-header"
                     onExpand={() => setIsDebugExpanded(!isDebugExpanded)}
                     toggleButtonProps={{
-                        id: 'adsbcot-debug-expand',
+                        id: 'lincot-debug-expand',
                         'aria-label': isDebugExpanded
                             ? _('Collapse debug')
                             : _('Expand debug'),
@@ -515,12 +515,12 @@ export const Application: React.FC = () => {
                 </CardExpandableContent>
             </Card>
 
-            <Card className="adsbcot-expandable-card" isExpanded={isAdvancedExpanded}>
+            <Card className="lincot-expandable-card" isExpanded={isAdvancedExpanded}>
                 <CardHeader
                     className="ct-card-expandable-header"
                     onExpand={() => setIsAdvancedExpanded(!isAdvancedExpanded)}
                     toggleButtonProps={{
-                        id: 'adsbcot-advanced-expand',
+                        id: 'lincot-advanced-expand',
                         'aria-label': isAdvancedExpanded
                             ? _('Collapse advanced')
                             : _('Expand advanced'),

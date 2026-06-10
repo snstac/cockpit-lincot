@@ -115,7 +115,7 @@ export function ServiceManagementCard({ serviceName, onToast }: ServiceManagemen
     const controlsDisabled = !!error || unitNotFound;
 
     return (
-        <Card data-testid="adsbcot-service-card">
+        <Card data-testid="lincot-service-card">
             <CardTitle>
                 <ServiceDescription serviceName={serviceName} />
             </CardTitle>

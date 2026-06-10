@@ -1,0 +1,37 @@
+# nfpm config — builds both .deb and .rpm from the prebuilt dist/ tree.
+# Usage: VERSION=1.2.3 nfpm package -f nfpm.yaml -p deb -t out/
+#        VERSION=1.2.3 nfpm package -f nfpm.yaml -p rpm -t out/
+name: cockpit-lincot
+arch: all
+platform: linux
+version: ${VERSION}
+release: "1"
+section: web
+priority: optional
+maintainer: "Sensors & Signals LLC <oss@snstac.com>"
+vendor: "Sensors & Signals LLC"
+homepage: https://github.com/snstac/cockpit-lincot
+license: LGPL-2.1
+description: |
+  Cockpit web console plugin for LINCOT, the Linux GPS to TAK gateway.
+  Manage the LINCOT service, edit /etc/default/lincot configuration, manage
+  TLS certificates, and view journal output from a web UI.
+
+depends:
+  - cockpit-bridge
+recommends:
+  - lincot
+
+contents:
+  # Cockpit plugin (prebuilt, gzipped)
+  - src: ./dist/
+    dst: /usr/share/cockpit/lincot
+    type: tree
+
+  # AppStream metainfo
+  - src: ./org.cockpit_project.lincot.metainfo.xml
+    dst: /usr/share/metainfo/org.cockpit_project.lincot.metainfo.xml
+
+  # Allow sudo-group Cockpit users to edit the LINCOT config and TLS material
+  - src: ./packaging/49-cockpit-lincot.rules
+    dst: /usr/share/polkit-1/rules.d/49-cockpit-lincot.rules

@@ -117,14 +117,14 @@ export function TlsUploadCard({ onToast, onInstalledPaths }: TlsUploadCardProps)
     return (
         <Card
             isExpanded={expanded}
-            className="adsbcot-expandable-card"
-            data-testid="adsbcot-tls-card"
+            className="lincot-expandable-card"
+            data-testid="lincot-tls-card"
         >
             <CardHeader
                 className="ct-card-expandable-header"
                 onExpand={() => setExpanded(!expanded)}
                 toggleButtonProps={{
-                    id: 'adsbcot-tls-expand',
+                    id: 'lincot-tls-expand',
                     'aria-label': expanded ? _('Collapse TLS upload') : _('Expand TLS upload'),
                 }}
             >
