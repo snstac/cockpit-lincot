@@ -62,4 +62,8 @@ jobs:
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${GITHUB_REF_NAME}" out/*.deb out/*.rpm --clobber
+        run: |
+          # stable-name aliases for wget-able releases/latest/download/ URLs
+          cp out/cockpit-lincot_*_all.deb out/cockpit-lincot_latest_all.deb
+          cp out/cockpit-lincot-*.noarch.rpm out/cockpit-lincot-latest.noarch.rpm
+          gh release upload "${GITHUB_REF_NAME}" out/*.deb out/*.rpm --clobber
