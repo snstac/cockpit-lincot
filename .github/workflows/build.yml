@@ -66,4 +66,6 @@ jobs:
           # stable-name aliases for wget-able releases/latest/download/ URLs
           cp out/cockpit-lincot_*_all.deb out/cockpit-lincot_latest_all.deb
           cp out/cockpit-lincot-*.noarch.rpm out/cockpit-lincot-latest.noarch.rpm
+          gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1 || \
+            gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --generate-notes
           gh release upload "${GITHUB_REF_NAME}" out/*.deb out/*.rpm --clobber
