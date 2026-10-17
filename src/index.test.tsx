@@ -13,7 +13,6 @@ vi.mock('./app.jsx', () => ({
 
 // index.tsx registers its DOMContentLoaded listener at import time; it only
 // looks up #app when the event fires, so the container is created afterwards.
-// The tests below run in order against that single registration.
 import './index';
 
 beforeAll(() => {
@@ -25,12 +24,12 @@ afterAll(() => {
 });
 
 describe('index entry point', () => {
-    test('renders nothing until DOMContentLoaded fires', () => {
+    // one test: the listener is registered once per module load, so the
+    // before/after states must be checked in order
+    test('mounts <Application /> into #app only once DOMContentLoaded fires', async () => {
         expect(document.getElementById('app')?.childNodes.length).toBe(0);
         expect(document.querySelector('[data-testid="application-stub"]')).toBeNull();
-    });
 
-    test('mounts <Application /> into #app on DOMContentLoaded', async () => {
         await act(async () => {
             document.dispatchEvent(new Event('DOMContentLoaded'));
         });

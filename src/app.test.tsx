@@ -785,7 +785,10 @@ describe('status output', () => {
         expect(statusSpawns()).toHaveLength(4);
     });
 
-    test('stops polling and ignores late results once unmounted', async () => {
+    // React 18 drops setState on unmounted components silently, so the
+    // `cancelled` guard in StatusOutput is not observable from here; this
+    // checks that polling stops and late results never reach the DOM.
+    test('stops polling once unmounted; late results never reach the DOM', async () => {
         vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
         const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
         try {
