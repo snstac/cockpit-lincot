@@ -8,6 +8,9 @@ updates:
       time: "22:00"
       timezone: "Europe/Berlin"
     open-pull-requests-limit: 3
+    # let new releases age a week before proposing them (supply-chain hygiene)
+    cooldown:
+      default-days: 7
     groups:
       eslint:
         patterns:
@@ -56,6 +59,8 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     open-pull-requests-limit: 3
+    cooldown:
+      default-days: 7
     labels:
       - "no-test"
     schedule:
