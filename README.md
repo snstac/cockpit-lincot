@@ -29,9 +29,12 @@ make deb rpm          # build packages with nfpm
 
 ## Development
 
+Requires Node.js 22.13 or newer.
+
 ```sh
 make watch            # rebuild on change
-make ci               # unit tests, eslint, stylelint, production bundle
+make ci               # unit tests, eslint, stylelint, typecheck, production bundle
+npm run test:coverage # unit tests with coverage (CI enforces 90%)
 ```
 
 ## The snstac TAK sensor ecosystem
