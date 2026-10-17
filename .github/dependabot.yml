@@ -12,6 +12,11 @@ updates:
       eslint:
         patterns:
           - "eslint*"
+          - "@eslint*"
+          - "@stylistic/*"
+          - "neostandard"
+          - "typescript-eslint"
+          - "globals"
       esbuild:
         patterns:
           - "esbuild*"
@@ -24,6 +29,12 @@ updates:
       stylelint:
         patterns:
           - "stylelint*"
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "jsdom"
+          - "@testing-library/*"
       types:
         patterns:
           - "@types*"

@@ -7,55 +7,63 @@
   "author": "",
   "license": "LGPL-2.1",
   "engines": {
-    "node": ">= 16"
+    "node": ">= 22.13"
   },
   "scripts": {
     "watch": "ESBUILD_WATCH='true' ./build.js",
     "build": "node ./build.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "eslint": "eslint src/",
-    "eslint:fix": "eslint --fix src/",
+    "eslint": "eslint .",
+    "eslint:fix": "eslint --fix .",
     "stylelint": "stylelint src/*{.css,scss}",
-    "stylelint:fix": "stylelint --fix src/*{.css,scss}"
+    "stylelint:fix": "stylelint --fix src/*{.css,scss}",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit -p ."
   },
   "devDependencies": {
-    "@types/node": "20.19.43",
-    "@types/react": "18.3.13",
-    "@types/react-dom": "18.3.1",
-    "@typescript-eslint/eslint-plugin": "8.40.0",
+    "@eslint-react/eslint-plugin": "5.28.0",
+    "@stylistic/eslint-plugin": "5.10.0",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
+    "@types/node": "22.20.5",
+    "@types/react": "18.3.31",
+    "@types/react-dom": "18.3.7",
+    "@vitest/coverage-v8": "5.0.5",
     "argparse": "2.0.1",
-    "esbuild": "0.28.1",
+    "esbuild": "0.28.2",
     "esbuild-sass-plugin": "3.7.0",
-    "esbuild-wasm": "0.28.1",
-    "eslint": "8.57.1",
-    "eslint-config-standard": "17.1.0",
-    "eslint-config-standard-jsx": "11.0.0",
-    "eslint-config-standard-react": "13.0.0",
-    "eslint-plugin-import": "2.32.0",
-    "eslint-plugin-node": "11.1.0",
-    "eslint-plugin-promise": "6.6.0",
-    "eslint-plugin-react": "7.37.5",
-    "eslint-plugin-react-hooks": "4.6.2",
+    "esbuild-wasm": "0.28.2",
+    "eslint": "10.13.0",
+    "eslint-plugin-react-hooks": "7.1.1",
     "gettext-parser": "8.0.0",
-    "glob": "11.0.3",
+    "glob": "11.1.0",
+    "globals": "17.13.0",
     "jed": "1.1.1",
+    "jsdom": "29.1.1",
+    "neostandard": "0.14.1",
     "qunit": "2.24.1",
-    "stylelint": "16.23.1",
+    "stylelint": "16.26.1",
     "stylelint-config-recommended-scss": "16.0.0",
     "stylelint-config-standard": "39.0.0",
     "stylelint-config-standard-scss": "15.0.1",
     "stylelint-formatter-pretty": "4.0.1",
-    "typescript": "5.9.2",
-    "vitest": "^3.2.4"
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.2",
+    "vitest": "5.0.5"
   },
   "dependencies": {
-    "@patternfly/patternfly": "6.1.0",
-    "@patternfly/react-core": "6.1.0",
-    "@patternfly/react-icons": "6.1.0",
-    "@patternfly/react-styles": "6.3.1",
+    "@patternfly/patternfly": "6.7.0",
+    "@patternfly/react-core": "6.7.0",
+    "@patternfly/react-icons": "6.7.0",
+    "@patternfly/react-styles": "6.7.0",
     "@snstac/cockpit-shared": "github:snstac/cockpit-shared#v1.3.1",
     "react": "18.3.1",
     "react-dom": "18.3.1"
+  },
+  "overrides": {
+    "@snstac/cockpit-shared": {
+      "@patternfly/react-core": "$@patternfly/react-core"
+    }
   }
 }

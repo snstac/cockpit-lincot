@@ -20,6 +20,7 @@
 /cockpit-*.tar.xz
 /out/
 /cockpit-navigator.spec
+/coverage/
 /dist/
 /pkg/
 /node_modules/
