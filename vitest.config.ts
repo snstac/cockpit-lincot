@@ -15,6 +15,10 @@ export default defineConfig({
     },
     test: {
         environment: 'node',
+        // CI runs `make ci` with NODE_ENV=production for the bundle; without
+        // this the tests would load React's production build, where act() and
+        // the development warnings are unavailable.
+        env: { NODE_ENV: 'test' },
         include: ['src/**/*.test.{ts,tsx}'],
         passWithNoTests: true,
         server: {
