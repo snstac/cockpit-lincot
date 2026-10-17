@@ -45,16 +45,19 @@ function StatusOutput({ serviceName }: { serviceName: string }) {
     const [statusOutput, setStatusOutput] = useState<string>('Loading...');
     useEffect(() => {
         let cancelled = false;
-        async function fetchStatus() {
-            try {
-                const out = await cockpit.spawn(
-                    ['systemctl', 'status', serviceName, '--no-pager'],
-                    { superuser: 'try' }
-                );
-                if (!cancelled) setStatusOutput(out);
-            } catch {
-                if (!cancelled) setStatusOutput(_('Failed to get status output.'));
-            }
+        function fetchStatus() {
+            cockpit.spawn(['systemctl', 'status', serviceName, '--no-pager'], { superuser: 'try' })
+                    .then(
+                        (out: string) => {
+                            if (!cancelled) setStatusOutput(out);
+                        },
+                        // systemctl status exits non-zero (3) for inactive or failed
+                        // units but still prints their status; cockpit passes that
+                        // stdout as the second rejection argument.
+                        (_ex: unknown, data?: string) => {
+                            if (!cancelled) setStatusOutput(data || _('Failed to get status output.'));
+                        }
+                    );
         }
         fetchStatus();
         const interval = setInterval(fetchStatus, 4000);
@@ -114,7 +117,8 @@ export const Application: React.FC = () => {
 
     const loadFromDisk = useCallback(async () => {
         try {
-            const content = await cockpit.file(CONFIG_FILE, { superuser: 'try' }).read();
+            // read() resolves with null when the file does not exist yet
+            const content = (await cockpit.file(CONFIG_FILE, { superuser: 'try' }).read()) ?? '';
             if (dirtyRef.current)
                 return;
             applyContent(content);
