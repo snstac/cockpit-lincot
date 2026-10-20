@@ -133,12 +133,13 @@ $(NODE_MODULES_STAMP): package.json $(PACKAGE_LOCK)
 	env -u NODE_ENV npm ci --ignore-scripts
 	@touch $(NODE_MODULES_STAMP)
 
-# Fast checks for CI: unit tests, linters, bundle
+# Fast checks for CI: unit tests, linters, typecheck, bundle
 .PHONY: ci
 ci: $(NODE_MODULES_STAMP) $(COCKPIT_REPO_STAMP) $(DIST_TEST)
 	npm run test
 	npm run eslint
 	npm run stylelint
+	npm run typecheck
 
 clean:
 	rm -rf dist/ out/
