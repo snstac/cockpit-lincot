@@ -41,7 +41,7 @@
     "glob": "11.1.0",
     "globals": "17.13.0",
     "jed": "1.1.1",
-    "jsdom": "29.1.1",
+    "jsdom": "30.1.2",
     "neostandard": "0.14.1",
     "qunit": "2.24.1",
     "stylelint": "16.26.1",
